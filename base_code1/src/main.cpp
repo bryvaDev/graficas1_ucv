@@ -1,6 +1,18 @@
 ﻿#include "PixelRender.h"
 #include <iostream>
+#include <algorithm>
+#include <chrono>
 
+struct Pixel {
+    int x, y;
+    bool operator==(const Pixel& other) const {
+        return (x == other.x && y == other.y);
+    };
+    bool operator<(const Pixel& other) const {
+        if (x != other.x) return x < other.x;
+        return y < other.y;
+    };
+};
 struct Line {
     int x0, y0;
     int x1, y1;
@@ -11,23 +23,94 @@ struct Elipse {
     int a, b;
     RGBA color;
 };
+class Comparator {
+    std::vector<Pixel> f1;
+    std::vector<Pixel> f2;
+    int goodTest = 0;
+    int totalTest = 0;
+public:
+    Comparator() {};
+    ~Comparator() {};
+    void loadPixel(Pixel newPixel, int type) {
+        if (type == 1) {
+            f1.push_back(newPixel);
+            return;
+        }
+        f2.push_back(newPixel);
+    };
+    void compare() {
+        totalTest++;
+        std::sort(f1.begin(), f1.end());
+        std::sort(f2.begin(), f2.end());
+        if (f1.size() != f2.size()) {
+            std::cout << "Los metodos no generan la misma cantidad de pixeles\n";
+            std::cout << f1.size() << " vs " << f2.size() << "\n";
+            return;
+        };
+        for (size_t i = 0; i < f1.size(); i++) {
+            if (!(f1[i] == f2[i])) {
+                std::cout << "Test " << totalTest << ": Pixeles diferentes en posicion " << i << "\n";
+                std::cout << "  Algoritmo 1: (" << f1[i].x << ", " << f1[i].y << ")\n";
+                std::cout << "  Algoritmo 2: (" << f2[i].x << ", " << f2[i].y << ")\n";
+                return;
+            }
+        }
+        goodTest++;
+        return;
+    };
+    void endTest(bool &endTest, std::vector<Elipse>&elipses){
+        endTest = false;
+        elipses.clear();
+        std::cout << "\n===RESULTADOS FINALES===\n";
+        std::cout << "Tests exitosos: " << goodTest << "/" << totalTest << "\n";
 
-class CMyTest : public CPixelRender
-{
+        if (goodTest == totalTest) {
+            std::cout << "Ambos metodos generan la misma cantidad de pixeles, en las misma posiciones";
+        } else {
+            std::cout << "Los metodos tienen diferencias en "
+                << (totalTest - goodTest) << " tests\n";
+        }
+        std::cout << "\nPresione ENTER para continuar...\n";
+        /*if (goodTest == 10000) {
+            std::cout << "Ambos metodos generan la misma cantidad de pixeles, en las misma posiciones";
+        };*/
+    };
+    void newTest() {
+        f1.clear();
+        f2.clear();
+       
+    };
+    void newSet() {
+        goodTest = 0;
+        totalTest = 0;
+    };
+};
+
+class CMyTest : public CPixelRender {
     int m_x0 = -1, m_y0 = -1, m_x1 = -1, m_y1 = -1;
     RGBA white = { 255, 255, 255, 255 };
     RGBA RGBA_Current = white;
     float colorArray[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
     bool drawing = false;
     bool test = false;
+    bool test2 = false;
     bool real = false;
+    bool waitEnter = false;
+    bool test2Interface = false;
+    bool useSlowElipse = false;
+    int drawElipseType = 1;
+    int numberOfCases[7] = {50000, 100000, 150000, 250000, 500000, 750000, 1000000};
+    Comparator ac;
     std::vector<Line> lines;
     std::vector<Elipse> elipses;
 public:
     CMyTest() {};
     ~CMyTest() {};
-    void drawlineReal(int x0, int y0, int x1, int y1, RGBA color) 
-    {
+    void setPixelCatcher(int x, int y, const RGBA& color) {
+        ac.loadPixel(Pixel{ x, y }, drawElipseType);
+        setPixel(x, y, color);
+    };
+    void drawlineReal(int x0, int y0, int x1, int y1, RGBA color) {
         float dx = x1 - x0;
         float dy = y1 - y0;
 
@@ -69,7 +152,18 @@ public:
             setPixel(x1, y1, color);
         }
     }
+    void ellipsePointsToCompare(int cx, int cy, int x, int y, RGBA c) {
+        setPixelCatcher(cx + x, cy + y, c);
+        setPixelCatcher(cx + x, cy - y, c);
+        setPixelCatcher(cx - x, cy + y, c);
+        setPixelCatcher(cx - x, cy - y, c);
+    };
+
     void ellipsePoints(int cx, int cy, int x, int y, RGBA c) {
+        if (test) {
+            ellipsePointsToCompare(cx, cy, x, y, c);
+            return;
+        };
         setPixel(cx + x, cy + y, c);
         setPixel(cx + x, cy - y, c);
         setPixel(cx - x, cy + y, c);
@@ -137,6 +231,7 @@ public:
         // Modalidad 1
         x = 0;
         y = b;
+        //d = (b2 << 2) * (1 - a) + a2;
         d = b * ((b << 2) - (a2_4)) + a2;
         int64_t deltaE = 12 * b2;
         int64_t deltaSE = ((3 * b2 + a2 * (-2 * b + 2)) << 2);
@@ -245,17 +340,25 @@ public:
             };
         };*/
         ImGui::Separator();
+        ImGui::Checkbox("Usar Metodo 1 para dibujar Elipse", &useSlowElipse);
+        ImGui::Separator();
         if (ImGui::Button("Iniciar Prueba")) {
-            test = true;
-            for (int i = 0; i < 10000; i++) {
-                RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
-                int x0 = rand() % width;
-                int y0 = rand() % height;
-                int x1 = rand() % width;
-                int y1 = rand() % height;
-                elipses.push_back(Elipse{ x0, y0, abs(x1-x0), abs(y1-y0), color});
+            if (!waitEnter) {
+                test = true;
+            }else {
+                std::cout << "Presione ENTER para continuar \n";
             };
-        };
+        }
+        /*if (test2Interface) {
+            ImGui::Separator();
+            //ImGui::SliderInt("Inserte numero de casos para el test2", &numberOfCases, 0, 1000000);
+            int sliderValue = numberOfCases / 50000;
+            if (ImGui::SliderInt("Casos para test2 (en 50k)", &sliderValue, 0, 20)) {
+                numberOfCases = sliderValue * 50000;
+            }
+            ImGui::Text("Valor actual: %d casos", numberOfCases);
+        };*/
+        
         //ImGui::Checkbox("Arimetica Real", &real);
         ImGui::End();
         ImGui::Render();
@@ -275,31 +378,92 @@ public:
             //if (!real) drawlineInt(m_x0, m_y0, m_x1, m_y1, RGBA_Current);
             //if (real) drawlineReal(m_x0, m_y0, m_x1, m_y1, RGBA_Current);
             //drawlineReal(m_x0, m_y0, m_x1, m_y1, RGBA_Current);
-            //drawEllipse1(m_x0+100, m_y1, abs(m_x1 - m_x0), abs(m_y1 - m_y0), RGBA_Current);
-            //drawEllipse2(m_x0, m_y1, abs(m_x1 - m_x0), abs(m_y1 - m_y0), RGBA_Current);
+            if (useSlowElipse) drawEllipse1(m_x0, m_y0, abs(m_x1 - m_x0), abs(m_y1 - m_y0), RGBA_Current);
+            if (!useSlowElipse) drawEllipse2(m_x0, m_y0, abs(m_x1 - m_x0), abs(m_y1 - m_y0), RGBA_Current);
 
         };
         /*for (auto& line : lines) {
             if (!real) drawlineInt(line.x0, line.y0, line.x1, line.y1, line.color);
             if (real) drawlineReal(line.x0, line.y0, line.x1, line.y1, line.color);
         };*/
-        if (test) {
+        if (!test && !test2) {
             for (auto& elipse : elipses) {
-                drawEllipse1(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
-                //drawEllipse2(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
+                if (useSlowElipse) drawEllipse1(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
+                if (!useSlowElipse) drawEllipse2(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
             };
         };
-        //for(int i = 0; i < m_nPixels; ++i)
-        {
-            //RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
-            //std::cout << x0 << " - " << y0 << " ~ " << x1 << " " << y1 << "\n";
-            //int x0 = rand() % width;
-            //int y0 = rand() % height;
-            //int x1 = rand() % width;
-            //int y1 = rand() % height;
-            //drawlineInt(x0, y0, x1, y1, color);
-            //setPixel(x, y, color);
+        if (test && !waitEnter) {
+            elipses.clear();
+            ac.newSet();
+            if (elipses.size() < 10000) {
+                for (int i = 0; i < 10000; i++) {
+                    RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
+                    int x0 = rand() % width;
+                    int y0 = rand() % height;
+                    int x1 = rand() % width;
+                    int y1 = rand() % height;
+                    elipses.push_back(Elipse{ x0, y0, abs(x1 - x0), abs(y1 - y0), color });
+                };
+            };
+            for (auto& elipse : elipses) {
+                ac.newTest();
+                drawElipseType = 1;
+                drawEllipse1(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
+                drawElipseType = 2;
+                drawEllipse2(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
+                ac.compare();
+            }
+            ac.endTest(test, elipses);
+            waitEnter = true;
+            test2Interface = true;
         }
+        else if (test2) {
+            for (auto& caseNumber : numberOfCases) {
+                elipses.clear();
+                for (int i = 0; i < caseNumber; i++) {
+                    RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
+                    int x0 = rand() % width;
+                    int y0 = rand() % height;
+                    int x1 = rand() % width;
+                    int y1 = rand() % height;
+                    elipses.push_back(Elipse{ x0, y0, abs(x1 - x0), abs(y1 - y0), color });
+                };
+                auto totalTime1 = std::chrono::duration<double, std::milli>::zero();
+                auto totalTime2 = std::chrono::duration<double, std::milli>::zero();
+                for (auto& elipse : elipses) {
+                    auto startTime1 = std::chrono::high_resolution_clock::now();
+                    drawEllipse1(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
+                    auto endTime1 = std::chrono::high_resolution_clock::now();
+                    auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(endTime1 - startTime1);
+                    totalTime1 += duration1;
+                    //Metodo 2
+                    auto startTime2 = std::chrono::high_resolution_clock::now();
+                    drawEllipse2(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
+                    auto endTime2 = std::chrono::high_resolution_clock::now();
+                    auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(endTime2 - startTime2);
+                    totalTime2 += duration2;
+                }
+                std::cout << "Para n = " << caseNumber << " - " << elipses.size() << "\n";
+                std::cout << "Tiempo total drawEllipse1: " << totalTime1.count() << " ms\n";
+                std::cout << "Tiempo total drawEllipse2: " << totalTime2.count() << " ms\n";
+                std::cout << "Tiempo promedio por elipse - drawEllipse1: " << totalTime1.count() / elipses.size() << " ms\n";
+                std::cout << "Tiempo promedio por elipse - drawEllipse2: " << totalTime2.count() / elipses.size() << " ms\n";
+            };
+            test2 = false;
+            elipses.clear();
+            std:: cout << "Prueba Terminada\n";
+            //for(int i = 0; i < m_nPixels; ++i)
+            {
+                //RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
+                //std::cout << x0 << " - " << y0 << " ~ " << x1 << " " << y1 << "\n";
+                //int x0 = rand() % width;
+                //int y0 = rand() % height;
+                //int x1 = rand() % width;
+                //int y1 = rand() % height;
+                //drawlineInt(x0, y0, x1, y1, color);
+                //setPixel(x, y, color);
+            }
+         };
     }
 
     void onKey(int key, int scancode, int action, int mods) 
@@ -309,14 +473,19 @@ public:
             std::cout << "Key " << key << " pressed\n";
             if (key == GLFW_KEY_ESCAPE)
                 glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+            if (key == GLFW_KEY_ENTER)
+                waitEnter = false;
+                test2 = true;
         }
-        else if (action == GLFW_RELEASE)
-            std::cout << "Key " << key << " released\n";
+        else if (action == GLFW_RELEASE);
+            //std::cout << "Key " << key << " released\n";
     }
-
 
     void onMouseButton(int button, int action, int mods) 
     {
+
+        if (ImGui::GetIO().WantCaptureMouse) return;
+
         if (button >= 0 && button < 3) 
         {
             double xpos, ypos;
@@ -326,7 +495,7 @@ public:
                 mouseButtonsDown[button] = true;
                 drawing = true;
                 // Obtener posición actual del cursor
-                std::cout << "Mouse button " << button << " pressed at position (" << xpos << ", " << ypos << ")\n";
+                //std::cout << "Mouse button " << button << " pressed at position (" << xpos << ", " << ypos << ")\n";
                 //RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
                 //setPixel((int)xpos, height - 1 - (int)ypos, color);
                 //setPixel((int)xpos+1, height - 1 - (int)ypos, color);
@@ -343,6 +512,7 @@ public:
                 drawing = false;
                 //std::cout << "Mouse button " << button << " released at position (" << xpos << ", " << ypos << ")\n";
                 //lines.push_back(Line{m_x0, m_y0, m_x1, m_y1, RGBA_Current});
+                elipses.push_back(Elipse{ (int)m_x0, (int)m_y0, abs((int)(m_x1 - m_x0)), abs((int)(m_y1 - m_y0)), RGBA_Current });
             }
         }
     }
