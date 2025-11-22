@@ -1,10 +1,14 @@
-#include "PixelRender.h"
+ï»¿#include "PixelRender.h"
 #include <iostream>
 
-struct line
-{
+struct Line {
     int x0, y0;
     int x1, y1;
+    RGBA color;
+};
+struct Elipse {
+    int cx, cy;
+    int a, b;
     RGBA color;
 };
 
@@ -15,8 +19,10 @@ class CMyTest : public CPixelRender
     RGBA RGBA_Current = white;
     float colorArray[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
     bool drawing = false;
+    bool test = false;
     bool real = false;
-    std::vector<line> lines;
+    std::vector<Line> lines;
+    std::vector<Elipse> elipses;
 public:
     CMyTest() {};
     ~CMyTest() {};
@@ -37,7 +43,12 @@ public:
             int sx = (x0 < x1) ? 1 : -1;
             for (int x = x0; x != x1; x += sx) {
                 setPixel(x, static_cast<int>(std::round(y)), color);
-                y += m * sx;
+                if (sx == 1) {
+                    y += m;
+                }
+                else {
+                    y -= m;
+                };
             }
             setPixel(x1, y1, color);
         }
@@ -48,7 +59,12 @@ public:
             int sy = (y0 < y1) ? 1 : -1;
             for (int y = y0; y != y1; y += sy) {
                 setPixel(static_cast<int>(std::round(x)), y, color);
-                x += m * sy;
+                if (sy == 1) {
+                    x += m;
+                }
+                else {
+                    x -= m;
+                };
             }
             setPixel(x1, y1, color);
         }
@@ -62,6 +78,7 @@ public:
 
     void drawEllipse1(int cx, int cy, int64_t a, int64_t b, RGBA c) {
         int64_t x, y, d;
+
         // modalidad 1
         x = 0;
         y = b;
@@ -78,6 +95,7 @@ public:
             x = x + 1;
             ellipsePoints(cx, cy, x, y, c);
         };
+
         // modalidad 2
         d = b * b * (4 * x * x + 4 * x + 1) + a * a * (4 * y * y - 8 * y + 4) - 4 * a * a * b * b;
         while (y > 0) {
@@ -98,127 +116,75 @@ public:
     };
 
     void drawEllipse2(int cx, int cy, int64_t a, int64_t b, RGBA c) {
+
         int64_t x, y, d;
-        // modalidad 1
-        x = 0;
-        y = b;
         int64_t a2 = a * a;
         int64_t b2 = b * b;
-        d = b * (4 * b - 4 * a2) + a2;
+
+        //Constantes Shifteadas
+
+        int64_t b2_2 = b2 << 1;
+        int64_t b2_4 = b2 << 2;
+        int64_t b2_8 = b2 << 3;
+
+        int64_t a2_2 = a2 << 1;
+        int64_t a2_4 = a2 << 2;
+        int64_t a2_8 = a2 << 3;
+
+        int64_t a2b2_8 = (b2 + a2) << 3;
+
+
+        // Modalidad 1
+        x = 0;
+        y = b;
+        d = b * ((b << 2) - (a2_4)) + a2;
+        int64_t deltaE = 12 * b2;
+        int64_t deltaSE = ((3 * b2 + a2 * (-2 * b + 2)) << 2);
+        int64_t cond_var = b2_2 + a2 - (a2_2) * b;
         ellipsePoints(cx, cy, x, y, c);
-        while (b2 * ((x + 1) << 1) < a2 * ((y<<1) - 1)) {
+        while (cond_var < 0) {
             if (d < 0) {
-                d = d + ((b2 * ((x << 1) + 3)) << 2);
+                d += deltaE;
+                deltaE += b2_8;
+                deltaSE += b2_8;
+                cond_var += b2_2;
             }
             else {
-                d = d + ((b2 * ((x << 1) + 3) + a2 * ((~(y << 1) + 1) + 2)) << 2);
+                d += deltaSE;
+                deltaE += b2_8;
+                deltaSE += a2b2_8;
                 y = y - 1;
+                cond_var += ((b2 + a2) << 1);
             };
             x = x + 1;
             ellipsePoints(cx, cy, x, y, c);
         };
-        // modalidad 2
-        d = b2 * (4 * x * x + 4 * x + 1) + a2 * (4 * y * y - 8 * y + 4) - 4 * a2 * b2;
+
+        //Modalidad 2
+        int64_t deltaS = (a2_4) * (-2 * y + 3);
+        int64_t deltaSE2 = ((b2 * ((x << 1) + 2) + a2 * (-2 * y + 3)) << 2);
+        d = b2 * ((x << 2) * x + (x << 2) + 1) + a2 * ((y << 2) * y - (y << 3) + 4) - (a2 * b2_4);
         while (y > 0) {
             if (d < 0) {
-                d = d + (((b2 * ((x << 1) + 2)) + a2 * ((~(y << 1)+1) + 3)) << 2);
-                //d = d + 4 * (b * b * (2 * x + 2) + a * a * (-2 * y + 3));
+                d += deltaSE2;
+                deltaS += a2_8;
+                deltaSE2 += a2b2_8;
                 x = x + 1;
             }
             else {
-                d = d + (a2 << 2) * ((~(y << 1) + 1) + 3);
+                d += deltaS;
+                deltaS += a2_8;
+                deltaSE2 += a2_8;
             };
             y = y - 1;
             ellipsePoints(cx, cy, x, y, c);
-        };
-        if (b==0) {
-            //std::cout << "entra";
-            drawlineInt(cx-a, cy, cx+a, cy, c);
-        };
-
-    };
-
-    void drawEllipse2Optimized(int cx, int cy, int64_t a, int64_t b, RGBA c) {
-        if (a <= 0 || b <= 0) return;
-
-        int64_t x = 0, y = b;
-        int64_t a2 = a * a, b2 = b * b;
-
-        // Términos precomputados para modalidad 1
-        int64_t d1 = (b2 << 2) - ((a2 * b) << 2) + a2;
-        int64_t deltaE1 = (b2 * 3) << 2;  // 4b²(2*0+3) inicial
-        int64_t deltaSE1 = ((b2 * 3) + (a2 * ((-(b << 1)) + 2))) << 2;
-
-        ellipsePoints(cx, cy, x, y, c);
-
-        // Modalidad 1
-        while ((b2 * ((x + 1) << 1)) < (a2 * ((y << 1) - 1))) {
-            if (d1 < 0) {
-                d1 += deltaE1;
-                deltaE1 += (b2 << 3);  // +8b²
-                deltaSE1 += (b2 << 3); // +8b²
-            }
-            else {
-                d1 += deltaSE1;
-                deltaE1 += (b2 << 3);  // +8b²
-                deltaSE1 += (b2 << 3) + (a2 << 3); // +8b² + 8a²
-                y--;
-            }
-            x++;
-            ellipsePoints(cx, cy, x, y, c);
         }
-
-        // Modalidad 2 - inicialización optimizada
-        int64_t d2 = (b2 * ((x * x) << 2 + (x << 2) + 1)) +
-            (a2 * ((y * y) << 2 - (y << 3) + 4)) -
-            (a2 * b2 << 2);
-
-        int64_t deltaS2 = (a2 * ((-(y << 1)) + 3)) << 2;
-        int64_t deltaSE2 = ((b2 * ((x << 1) + 2)) + (a2 * ((-(y << 1)) + 3))) << 2;
-
-        while (y > 0) {
-            if (d2 < 0) {
-                d2 += deltaSE2;
-                deltaS2 += (a2 << 3);   // +8a²
-                deltaSE2 += (a2 << 3) + (b2 << 3); // +8a² + 8b²
-                x++;
-            }
-            else {
-                d2 += deltaS2;
-                deltaS2 += (a2 << 3);   // +8a²
-                deltaSE2 += (a2 << 3);  // +8a²
-            }
-            y--;
-            ellipsePoints(cx, cy, x, y, c);
-        }
-
         if (b == 0) {
+            //std::cout << "entra";
             drawlineInt(cx - a, cy, cx + a, cy, c);
         }
     }
 
-    /*void drawlineInt(int x0, int y0, int x1, int y1, RGBA color) {
-        int dx, dy, x, y, d, incN, incS, incE, incNE, incSE;
-        dx = x1 - x0;
-        dy = y1 - y0;
-        d = dx - 2*dy;
-        incE = 2 * dy;
-        incNE = 2 * (dx - dy);
-        x = x0;
-        y = y0;
-        setPixel(x, y, color);
-        while (x < x1) {
-            if (d <= 0) {
-                d = d + incNE;
-                y = y + 1;
-            }
-            else {
-                d = d + incE;
-            };
-            x = x + 1;
-            setPixel(x, y, color);
-        };
-    }*/
     void drawlineInt(int x0, int y0, int x1, int y1, RGBA color) {
         int dx = std::abs(x1 - x0);
         int dy = std::abs(y1 - y0);
@@ -267,19 +233,30 @@ public:
             RGBA_Current.g = static_cast<unsigned char>(colorArray[1]*255);
             RGBA_Current.b = static_cast<unsigned char>(colorArray[2]*255);
         };
-        ImGui::Separator();
-        if(ImGui::Button("Add 1000 lines")) {
+        /*ImGui::Separator();
+        if (ImGui::Button("Add 1000 lines")) {
             for (int i = 0; i < 1000; i++) {
                 RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
                 int x0 = rand() % width;
                 int y0 = rand() % height;
                 int x1 = rand() % width;
                 int y1 = rand() % height;
-                lines.push_back(line{ x0, y0, x1, y1, color });
+                lines.push_back(Line{ x0, y0, x1, y1, color });
+            };
+        };*/
+        ImGui::Separator();
+        if (ImGui::Button("Iniciar Prueba")) {
+            test = true;
+            for (int i = 0; i < 10000; i++) {
+                RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
+                int x0 = rand() % width;
+                int y0 = rand() % height;
+                int x1 = rand() % width;
+                int y1 = rand() % height;
+                elipses.push_back(Elipse{ x0, y0, abs(x1-x0), abs(y1-y0), color});
             };
         };
-        ImGui::Separator();
-        ImGui::Checkbox("Arimetica Real", &real);
+        //ImGui::Checkbox("Arimetica Real", &real);
         ImGui::End();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -293,16 +270,25 @@ public:
     {
         std::fill(m_buffer.begin(), m_buffer.end(), RGBA{0,0,0,0});
         //pixelsModifiedThisSecond += m_nPixels;
-        // tu código actual para modificar pixels...
+        // tu cÃ³digo actual para modificar pixels...
         if (drawing) {
             //if (!real) drawlineInt(m_x0, m_y0, m_x1, m_y1, RGBA_Current);
             //if (real) drawlineReal(m_x0, m_y0, m_x1, m_y1, RGBA_Current);
-            drawEllipse2Optimized(m_x0, m_y1, abs(m_x1 - m_x0), abs(m_y1 - m_y0), RGBA_Current);
+            //drawlineReal(m_x0, m_y0, m_x1, m_y1, RGBA_Current);
+            //drawEllipse1(m_x0+100, m_y1, abs(m_x1 - m_x0), abs(m_y1 - m_y0), RGBA_Current);
+            //drawEllipse2(m_x0, m_y1, abs(m_x1 - m_x0), abs(m_y1 - m_y0), RGBA_Current);
+
         };
         /*for (auto& line : lines) {
             if (!real) drawlineInt(line.x0, line.y0, line.x1, line.y1, line.color);
             if (real) drawlineReal(line.x0, line.y0, line.x1, line.y1, line.color);
         };*/
+        if (test) {
+            for (auto& elipse : elipses) {
+                drawEllipse1(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
+                //drawEllipse2(elipse.cx, elipse.cy, elipse.a, elipse.b, elipse.color);
+            };
+        };
         //for(int i = 0; i < m_nPixels; ++i)
         {
             //RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
@@ -339,7 +325,7 @@ public:
             {   
                 mouseButtonsDown[button] = true;
                 drawing = true;
-                // Obtener posición actual del cursor
+                // Obtener posiciÃ³n actual del cursor
                 std::cout << "Mouse button " << button << " pressed at position (" << xpos << ", " << ypos << ")\n";
                 //RGBA color = { (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), (unsigned char)(rand() % 256), 255 };
                 //setPixel((int)xpos, height - 1 - (int)ypos, color);
@@ -356,11 +342,10 @@ public:
                 mouseButtonsDown[button] = false;
                 drawing = false;
                 //std::cout << "Mouse button " << button << " released at position (" << xpos << ", " << ypos << ")\n";
-                lines.push_back(line{m_x0, m_y0, m_x1, m_y1, RGBA_Current});
+                //lines.push_back(Line{m_x0, m_y0, m_x1, m_y1, RGBA_Current});
             }
         }
     }
-
     void onCursorPos(double xpos, double ypos) 
     {
         if (mouseButtonsDown[0] || mouseButtonsDown[1] || mouseButtonsDown[2]) 

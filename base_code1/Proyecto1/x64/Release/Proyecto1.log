@@ -1,6 +1,33 @@
-﻿  Generating code
-  2 of 2021 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+﻿  main.cpp
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(31,18): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(32,18): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(41,21): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(57,21): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(86,34): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(86,31): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(96,38): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(96,35): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(110,38): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(110,35): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(114,40): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(114,28): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(144,34): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(144,31): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(160,38): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(160,35): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(180,38): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(180,35): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(184,40): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(184,28): warning C4244: 'argument': conversion from 'int64_t' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(335,24): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(336,24): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(337,38): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(338,38): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(354,20): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\bryan\Desktop\graficas1_ucv\base_code1\src\main.cpp(355,34): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+  Generating code
+  2 of 2034 functions (<0.1%) were compiled, the rest were copied from previous compilation.
     1 functions were new in current compilation
     44 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
-  Proyecto1.vcxproj -> C:\Users\bryan\OneDrive\Desktop\base_code1\x64\Release\Proyecto1.exe
+  Proyecto1.vcxproj -> C:\Users\bryan\Desktop\graficas1_ucv\base_code1\x64\Release\Proyecto1.exe
